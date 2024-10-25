@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, X } from "lucide-react";
+import { Event } from "@/lib/storage/types";
 
 type FormField = {
   name: string;
@@ -49,23 +50,39 @@ const LoadingScreen = () => (
 );
 
 export const CreateEventModal = ({
+  initialData,
   onClose,
   onSubmit,
   isSubmitting = false,
 }: {
+  initialData?: Event;
   onClose: () => void;
   onSubmit: (data: FormField) => Promise<void>;
   isSubmitting?: boolean;
 }) => {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<FormField>({
-    name: "",
-    date: "",
-    time: "",
-    location: "",
-    maxPlayers: "10",
-    priceTotal: "",
-    creator: "",
+  const [formData, setFormData] = useState<FormField>(() => {
+    if (initialData) {
+      const [date, time] = initialData.date.split("T");
+      return {
+        name: initialData.name,
+        date,
+        time,
+        location: initialData.location,
+        maxPlayers: initialData.maxPlayers.toString(),
+        priceTotal: initialData.priceTotal.toString(),
+        creator: initialData.creator,
+      };
+    }
+    return {
+      name: "",
+      date: "",
+      time: "",
+      location: "",
+      maxPlayers: "10",
+      priceTotal: "",
+      creator: "",
+    };
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -168,6 +185,9 @@ export const CreateEventModal = ({
           </div>
 
           <div className="relative flex justify-between items-center">
+            {/* <h2 className="text-2xl font-bold text-white">
+              {initialData ? "Edit Your Game" : "Create Your Game"}
+            </h2> */}
             <h2 className="text-2xl font-bold text-white">
               {step === 1
                 ? "The Basics"
@@ -408,7 +428,13 @@ export const CreateEventModal = ({
                          }`}
             >
               {step === 3 ? (
-                isSubmitting ? (
+                initialData ? (
+                  isSubmitting ? (
+                    "Updating..."
+                  ) : (
+                    "Update Game"
+                  )
+                ) : isSubmitting ? (
                   "Creating..."
                 ) : (
                   "Create Game"

@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEvent } from "@/lib/hooks/useEvent";
+import { useEventAdmin } from "@/lib/hooks/useEventAdmin";
+import { CreateEventModal } from "./CreateEventForm";
+import { Event } from "@/lib/storage/types";
 
 export const EventPage = ({ eventKey }: { eventKey: string }) => {
   const {
@@ -21,7 +24,9 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
     // togglePaymentStatus, // You can use this for payment status updates
     updateEvent,
   } = useEvent(eventKey);
+  const { isAdmin } = useEventAdmin(event);
   const [newPlayerName, setNewPlayerName] = useState("");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   if (isLoading) return <LoadingState />;
   if (isError || !event) return <ErrorState />;
@@ -63,6 +68,31 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
 
   return (
     <div className="min-h-screen bg-black text-white" data-event-key={eventKey}>
+      {/* Captain Mode Banner */}
+      {isAdmin && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-[#FF2E00] to-[#FFD600] py-2"
+        >
+          <div className="max-w-3xl mx-auto px-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-5 h-5" />
+              <span className="font-bold">
+                <span className="font-extrabold">Captain Mode</span>{" "}
+                <span className="text-red-200">enabled</span>
+              </span>
+            </div>
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="px-4 py-1 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+            >
+              Edit Event
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Header */}
       <header className="relative bg-gradient-to-r from-[#FF2E00] via-[#FF8C00] to-[#FFD600] py-8">
         <div className="absolute inset-0 opacity-10">
@@ -274,12 +304,49 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
                       </span>
                     )}
                   </button>
+                  {isAdmin && player.name !== event.creator && (
+                    <button
+                      onClick={() => {
+                        const updatedEvent = {
+                          ...event,
+                          players: event.players.filter(
+                            (p) => p.name !== player.name
+                          ),
+                        };
+                        updateEvent(updatedEvent);
+                      }}
+                      className="text-[#FF2E00] hover:text-[#FF4D00] transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>
           </div>
         </motion.div>
       </main>
+
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <CreateEventModal
+          initialData={event}
+          onClose={() => setIsEditModalOpen(false)}
+          onSubmit={async (formData) => {
+            const updatedEvent: Event = {
+              ...event,
+              name: formData.name,
+              date: `${formData.date}T${formData.time}`,
+              location: formData.location,
+              maxPlayers: parseInt(formData.maxPlayers),
+              priceTotal: parseFloat(formData.priceTotal),
+              creator: formData.creator,
+            };
+            await updateEvent(updatedEvent);
+            setIsEditModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 };

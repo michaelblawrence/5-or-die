@@ -7,6 +7,7 @@ export interface Player {
 export interface Event {
   eventKey: string;
   name: string;
+  adminToken: string;
   date: string;
   location: string;
   maxPlayers: number;
