@@ -1,20 +1,22 @@
-import React, { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
   Calendar,
   Clock,
-  Users,
   PoundSterling,
   CheckCircle,
   XCircle,
   Trophy,
+  ChevronDown,
+  Shield,
+  ChevronUp,
 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEvent } from "@/lib/hooks/useEvent";
 import { useEventAdmin } from "@/lib/hooks/useEventAdmin";
 import { CreateEventModal } from "./CreateEventForm";
 import { Event } from "@/lib/storage/types";
+import { TeamsSection } from "./TeamsSection";
 
 export const EventPage = ({ eventKey }: { eventKey: string }) => {
   const {
@@ -27,6 +29,8 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
   const { isAdmin } = useEventAdmin(event);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isTeamsSectionOpen, setTeamsSectionOpen] = useState(false);
+  const teamsSectionRef = useRef<HTMLDivElement>(null);
 
   if (isLoading) return <LoadingState />;
   if (isError || !event) return <ErrorState />;
@@ -61,10 +65,125 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
     updateEvent(updatedEvent);
   };
 
+  const handleTeamsClick = () => {
+    setTeamsSectionOpen((prev) => !prev);
+
+    // If we're opening the section, scroll to it after it's rendered
+    if (!isTeamsSectionOpen) {
+      setTimeout(() => {
+        teamsSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 300); // Small delay to ensure the section has rendered
+    }
+  };
+
   const totalPaid = event.players.filter((p) => p.hasPaid).length;
   const pricePerPerson = event.priceTotal / event.maxPlayers;
   const totalCollected = totalPaid * pricePerPerson;
   const percentagePaid = (totalCollected / event.priceTotal) * 100;
+
+  const QuickInfoCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Location Card */}
+      <motion.div
+        className="bg-[#1A1A1A] p-4 rounded-lg"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <MapPin className="w-5 h-5 text-[#FF2E00]" />
+          <h2 className="font-bold">Location</h2>
+        </div>
+        <p className="text-gray-300">{event.location}</p>
+      </motion.div>
+
+      {/* Teams Card */}
+      <motion.button
+        onClick={handleTeamsClick}
+        className="bg-[#1A1A1A] p-4 rounded-lg transition-colors hover:bg-[#252525] relative group"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <Shield className="w-5 h-5 text-[#FF8C00]" />
+          <h2 className="font-bold">Teams</h2>
+        </div>
+        <p className="text-gray-300 text-left">
+          {event.teams?.team1Name || "Team 1"} vs{" "}
+          {event.teams?.team2Name || "Team 2"}
+        </p>
+        {event.teamsLocked ? (
+          <span className="absolute top-2 right-2 px-2 py-1 bg-green-900/50 rounded-full text-xs">
+            Locked
+          </span>
+        ) : (
+          <span className="absolute top-2 right-2 px-2 py-1 bg-yellow-900/50 rounded-full text-xs">
+            Not Set
+          </span>
+        )}
+        <div className="absolute inset-0 border-2 border-transparent rounded-lg group-hover:border-[#FF8C00] transition-colors" />
+        <div className="absolute bottom-2 right-2 text-gray-500 group-hover:text-[#FF8C00] transition-colors">
+          {isTeamsSectionOpen ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </div>
+      </motion.button>
+
+      {/* Captain Card */}
+      <motion.div
+        className="bg-[#1A1A1A] p-4 rounded-lg"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <Trophy className="w-5 h-5 text-[#FFD600]" />
+          <h2 className="font-bold">Captain</h2>
+        </div>
+        <p className="text-gray-300">{event.creator}</p>
+      </motion.div>
+    </div>
+  );
+
+  // Teams section with collapse animation
+  const CollapsibleTeamsSection = () => (
+    <AnimatePresence>
+      {isTeamsSectionOpen && (
+        <motion.div
+          ref={teamsSectionRef}
+          initial={{ height: 0, opacity: 0 }}
+          animate={{
+            height: "auto",
+            opacity: 1,
+            transition: { duration: 0.3 },
+          }}
+          exit={{
+            height: 0,
+            opacity: 0,
+            transition: { duration: 0.2 },
+          }}
+          className="overflow-hidden"
+        >
+          <div className="border-t border-[#333] mt-8 pt-8">
+            <TeamsSection
+              event={event}
+              isAdmin={isAdmin}
+              onUpdateEvent={updateEvent}
+              onClose={() => setTeamsSectionOpen(false)}
+            />
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   return (
     <div className="min-h-screen bg-black text-white" data-event-key={eventKey}>
@@ -148,48 +267,7 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
 
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-8">
         {/* Quick Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <motion.div
-            className="bg-[#1A1A1A] p-4 rounded-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin className="w-5 h-5 text-[#FF2E00]" />
-              <h2 className="font-bold">Location</h2>
-            </div>
-            <p className="text-gray-300">{event.location}</p>
-          </motion.div>
-
-          <motion.div
-            className="bg-[#1A1A1A] p-4 rounded-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-5 h-5 text-[#FF8C00]" />
-              <h2 className="font-bold">Players</h2>
-            </div>
-            <p className="text-gray-300">
-              {event.players.length} / {event.maxPlayers}
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="bg-[#1A1A1A] p-4 rounded-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Trophy className="w-5 h-5 text-[#FFD600]" />
-              <h2 className="font-bold">Captain</h2>
-            </div>
-            <p className="text-gray-300">{event.creator}</p>
-          </motion.div>
-        </div>
+        <QuickInfoCards />
 
         {/* Payment Progress */}
         <motion.div
@@ -205,9 +283,9 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
             </h2>
             <div className="text-right">
               <p className="text-2xl font-bold">
-                £{totalCollected}{" "}
+                £{totalCollected.toFixed(2)}{" "}
                 <span className="text-gray-500 text-sm">
-                  / £{event.priceTotal}
+                  / £{event.priceTotal.toFixed(2)}
                 </span>
               </p>
               <p className="text-sm text-gray-400">
@@ -324,6 +402,9 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
               ))}
             </AnimatePresence>
           </div>
+
+          {/* Collapsible Teams Section at the bottom */}
+          {event.players.length >= 2 && <CollapsibleTeamsSection />}
         </motion.div>
       </main>
 

@@ -1,20 +1,5 @@
-export interface Player {
-  name: string;
-  hasPaid: boolean;
-  team: number | null;
-}
-
-export interface Event {
-  eventKey: string;
-  name: string;
-  adminToken: string;
-  date: string;
-  location: string;
-  maxPlayers: number;
-  priceTotal: number;
-  creator: string;
-  players: Player[];
-}
+import { Event } from "./schema";
+export type { Event, Player } from "./schema";
 
 export interface StorageProvider {
   createEvent(event: Event): Promise<void>;

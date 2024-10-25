@@ -7,6 +7,7 @@ const PlayerV1Schema = z.object({
   team: z.number().nullable(),
 });
 
+// Adding team names to the schema
 const EventV1Schema = z.object({
   schemaVersion: z.literal("1"),
   eventKey: z.string(),
@@ -18,6 +19,13 @@ const EventV1Schema = z.object({
   priceTotal: z.number(),
   creator: z.string(),
   players: z.array(PlayerV1Schema),
+  teams: z
+    .object({
+      team1Name: z.string().default("Team 1"),
+      team2Name: z.string().default("Team 2"),
+    })
+    .optional(),
+  teamsLocked: z.boolean().default(false), // Prevent accidental reshuffling
 });
 
 export type EventV1 = z.infer<typeof EventV1Schema>;

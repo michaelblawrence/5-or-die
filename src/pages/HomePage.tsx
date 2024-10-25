@@ -28,6 +28,7 @@ export function HomePage() {
     const adminToken = nanoid(20);
 
     const newEvent: Event = {
+      schemaVersion: "1",
       eventKey,
       adminToken,
       name: formData.name,
@@ -43,6 +44,7 @@ export function HomePage() {
           team: null,
         },
       ],
+      teamsLocked: false,
     };
 
     try {
