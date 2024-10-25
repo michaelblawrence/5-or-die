@@ -1,20 +1,26 @@
 import { StorageProvider } from "./types";
 import { LocalStorageProvider } from "./local-storage";
+import { S3Provider } from "./s3-provider";
 
-type StorageProviderType = "localStorage" | "turso";
+export type StorageConfig =
+  | { type: "localStorage" }
+  | { type: "s3"; bucketUrl: string };
 
 let storageProvider: StorageProvider;
 
-export function initializeStorage(type: StorageProviderType) {
-  switch (type) {
+export function initializeStorage(config: StorageConfig) {
+  switch (config.type) {
     case "localStorage":
       storageProvider = new LocalStorageProvider();
       break;
-    case "turso":
-      // We'll implement this later
-      throw new Error("Turso provider not implemented yet");
+    case "s3":
+      storageProvider = new S3Provider(config.bucketUrl);
+      break;
     default:
-      throw new Error(`Unknown storage provider type: ${type}`);
+      throw new Error(
+        // @ts-expect-error Unknown storage provider type
+        `Unknown storage provider type: ${config.type as string}`
+      );
   }
 }
 
