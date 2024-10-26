@@ -1,50 +1,89 @@
-# React + TypeScript + Vite
+# 5 OR DIE
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A no-nonsense 5-a-side football organiser. Stop texting about football. Start playing it.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🏃‍♂️ Create and join football games
+- 💰 Track payments with zero faff
+- 👕 Auto-assign & balance teams
+- 📱 Mobile-first design
+- 🔗 Share games with a single link
+- 👑 Captain controls for managing games
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- React + TypeScript
+- Tailwind CSS for styling
+- Framer Motion for animations
+- Amazon S3 for data storage
+- React Query for data management
 
-- Configure the top-level `parserOptions` property like this:
+## Development
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## Environment Variables
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+Create a `.env` file in the root directory:
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+```env
+# S3 Bucket for data storage (production)
+VITE_S3_BUCKET_URL=https://your-bucket.s3.region.amazonaws.com/
+
+# Leave empty to use localStorage for development
+VITE_S3_BUCKET_URL=
 ```
+
+## Storage Providers
+
+The app supports multiple storage providers:
+
+- `localStorage` for development
+- Amazon S3 for production
+
+Data is stored as JSON files with schema versioning for future migrations.
+
+## Deployment
+
+1. Set up an S3 bucket with the following configuration:
+
+   - Public access enabled
+   - CORS configured for your domain
+   - Bucket policy allowing anonymous PUT/GET
+
+2. Deploy to your hosting platform of choice:
+
+```bash
+npm run build
+# Deploy the dist folder
+```
+
+## Contributing
+
+This is a work in progress. Feel free to submit issues and PRs!
+
+## FAQ
+
+**Q: Why "5 OR DIE"?**  
+A: Because this whole project is written primarily by Anthropic's Claude model - and I gave it full creative license to be its own person. It chose the name. Dramatic, I know.
+
+**Q: So how much of this is actually written by you?**  
+A: I wrote this line of the README. Isn't that enough? No? Fine. Just some glue code and cleanup here and there. The project was designed to understand how far you can get just supervising and supliying creative direction to today's models.
+
+## License
+
+MIT License - See LICENSE file for details
+
+---
+
+Made with ⚽️ for proper football
