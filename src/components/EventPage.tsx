@@ -17,6 +17,8 @@ import { useEventAdmin } from "@/lib/hooks/useEventAdmin";
 import { CreateEventModal } from "./CreateEventForm";
 import { Event } from "@/lib/storage/types";
 import { TeamsSection } from "./TeamsSection";
+import { useEventStorage } from "@/lib/hooks/useEventStorage";
+import { WelcomeDialog } from "./WelcomeDialog";
 
 export const EventPage = ({ eventKey }: { eventKey: string }) => {
   const {
@@ -26,26 +28,31 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
     // togglePaymentStatus, // You can use this for payment status updates
     updateEvent,
   } = useEvent(eventKey);
+  const { hasJoinedEvent, markEventJoined } = useEventStorage(eventKey);
   const { isAdmin } = useEventAdmin(event);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isTeamsSectionOpen, setTeamsSectionOpen] = useState(false);
+  const [showJoinDialog, setShowJoinDialog] = useState(!hasJoinedEvent);
+
   const teamsSectionRef = useRef<HTMLDivElement>(null);
 
   if (isLoading) return <LoadingState />;
   if (isError || !event) return <ErrorState />;
 
-  const handleAddPlayer = () => {
+  const isEventFull = event.players.length >= event.maxPlayers;
+
+  const handleAddPlayer = (name: string) => {
     if (
-      newPlayerName.trim() &&
+      name.trim() &&
       event.players.length < event.maxPlayers &&
-      !event.players.some((p) => p.name === newPlayerName.trim())
+      !event.players.some((p) => p.name === name.trim())
     ) {
       const updatedEvent = {
         ...event,
         players: [
           ...event.players,
-          { name: newPlayerName.trim(), hasPaid: false, team: null },
+          { name: name.trim(), hasPaid: false, team: null },
         ],
       };
       updateEvent(updatedEvent);
@@ -53,16 +60,25 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
     }
   };
 
+  const handleJoinGame = (name: string) => {
+    if (event.players.some((p) => p.name === name.trim())) return false;
+    handleAddPlayer(name);
+    markEventJoined();
+    return true;
+  };
+
   const togglePaymentStatus = (playerName: string) => {
+    let hasPaid = false;
     const updatedEvent = {
       ...event,
       players: event.players.map((player) =>
         player.name === playerName
-          ? { ...player, hasPaid: !player.hasPaid }
+          ? { ...player, hasPaid: (hasPaid = !player.hasPaid) }
           : player
       ),
     };
     updateEvent(updatedEvent);
+    return hasPaid;
   };
 
   const handleTeamsClick = () => {
@@ -325,7 +341,7 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
                        focus:border-[#FF2E00] outline-none transition-colors text-white"
                 />
                 <button
-                  onClick={handleAddPlayer}
+                  onClick={() => handleAddPlayer(newPlayerName)}
                   disabled={!newPlayerName.trim()}
                   className="px-6 py-2 bg-[#FF2E00] text-white rounded-lg font-bold text-nowrap
                        disabled:opacity-50 disabled:cursor-not-allowed
@@ -342,7 +358,7 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
             <AnimatePresence>
               {event.players.map((player, index) => (
                 <motion.div
-                  key={player.name}
+                  key={player.name + index}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 + index * 0.1 }}
@@ -428,6 +444,20 @@ export const EventPage = ({ eventKey }: { eventKey: string }) => {
           }}
         />
       )}
+
+      {/* Welcome dialog */}
+      <AnimatePresence>
+        {showJoinDialog && !isAdmin && (
+          <WelcomeDialog
+            pricePerPerson={pricePerPerson}
+            isPending={isLoading}
+            onJoin={handleJoinGame}
+            onClose={() => setShowJoinDialog(false)}
+            togglePaymentStatus={togglePaymentStatus}
+            isEventFull={isEventFull}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
